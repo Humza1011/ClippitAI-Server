@@ -1,5 +1,6 @@
 const express = require("express");
 const audioController = require("../controllers/audio-controller");
+const { UploadMultipleFilesMulter } = require("../middleware/file");
 
 const router = express.Router();
 
@@ -11,8 +12,8 @@ router.get("/", audioController.GetAudios);
 // GET AUDIO BY ID
 router.get("/single/:id", audioController.GetAudioByID);
 
-// CREATE NEW AUDIO
-router.post("/", audioController.CreateAudio);
+// CREATE NEW AUDIOS
+router.post("/", UploadMultipleFilesMulter, audioController.CreateAudios);
 
 // UPDATE AUDIO BY ID
 router.patch("/:id", audioController.UpdateAudio);

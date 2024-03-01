@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 
 const imageSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  filePath: String,
+  title: { type: String },
+  url: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
 

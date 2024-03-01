@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const helmet = require("helmet");
 const cors = require("cors");
 const morgan = require("morgan");
+const cloudinary = require("cloudinary").v2;
 
 // Import routes
 const userRoutes = require("./routes/user-routes");
@@ -13,8 +14,22 @@ const audioRoutes = require("./routes/audio-routes");
 const imageRoutes = require("./routes/image-routes");
 const projectRoutes = require("./routes/project-routes");
 const videoRoutes = require("./routes/video-routes");
+const { generateVideoScript } = require("./middleware/scriptGeneration");
+const {
+  UploadMultipleFilesMulter,
+  UploadMultipleFiles,
+  UploadFileMulter,
+  UploadFile,
+} = require("./middleware/file");
 
 const app = express();
+
+// CONFIGURE CLOUDINARY
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Database connection
 mongoose
@@ -26,7 +41,13 @@ mongoose
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-app.use(cors());
+// app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_ORIGIN,
+    credentials: true,
+  })
+);
 app.use(morgan("tiny"));
 
 // Routes
@@ -39,6 +60,14 @@ app.use("/video", videoRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Success" });
 });
+
+app.post("/script/generate", generateVideoScript);
+app.post(
+  "/file/upload/multiple",
+  UploadMultipleFilesMulter,
+  UploadMultipleFiles
+);
+app.post("/file/upload", UploadFileMulter, UploadFile);
 
 // Error handling
 app.use((req, res, next) => {

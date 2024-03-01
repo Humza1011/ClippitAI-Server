@@ -23,18 +23,27 @@ const GetAudioByID = async (req, res, next) => {
   }
 };
 
-// CREATE NEW AUDIO
-const CreateAudio = async (req, res, next) => {
-  const audio = new Audio(req.body);
+// CREATE NEW AUDIOS
+const CreateAudios = async (req, res, next) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).send("No files were uploaded.");
+  }
+
+  const audioDocuments = req.files.map((file) => ({
+    url: file.path,
+    title: file.originalname.split(".")[0],
+  }));
+
   try {
-    await audio.save();
-    return res.status(200).json(audio);
+    await Audio.insertMany(audioDocuments);
+
+    return res.status(200).json({ message: "Success" });
   } catch (err) {
     next(err);
   }
 };
 
-// UPDATE AUDIO
+// UPDATE VIDEO
 const UpdateAudio = async (req, res, next) => {
   try {
     const audio = await Audio.findByIdAndUpdate(req.params.id, req.body, {
@@ -59,7 +68,7 @@ const DeleteAudio = async (req, res, next) => {
 module.exports = {
   GetAudios,
   GetAudioByID,
-  CreateAudio,
-  UpdateAudio,
+  CreateAudios,
   DeleteAudio,
+  UpdateAudio,
 };

@@ -1,5 +1,6 @@
 const express = require("express");
 const videoController = require("../controllers/video-controller");
+const { UploadMultipleFilesMulter } = require("../middleware/file");
 
 const router = express.Router();
 
@@ -11,13 +12,16 @@ router.get("/", videoController.GetVideos);
 // GET VIDEO BY ID
 router.get("/single/:id", videoController.GetVideoByID);
 
-// CREATE NEW VIDEO
-router.post("/", videoController.CreateVideo);
+// CREATE NEW VIDEOS
+router.post("/",UploadMultipleFilesMulter, videoController.CreateVideos);
 
 // UPDATE VIDEO BY ID
 router.patch("/:id", videoController.UpdateVideo);
 
 // DELETE VIDEO BY ID
 router.delete("/:id", videoController.DeleteVideo);
+
+// CREATE NEW VIDEO
+router.post("/finalize", videoController.GenerateVideo);
 
 module.exports = router;
