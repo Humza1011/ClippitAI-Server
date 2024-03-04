@@ -13,7 +13,7 @@ router.get("/", videoController.GetVideos);
 router.get("/single/:id", videoController.GetVideoByID);
 
 // CREATE NEW VIDEOS
-router.post("/",UploadMultipleFilesMulter, videoController.CreateVideos);
+router.post("/", UploadMultipleFilesMulter, videoController.CreateVideos);
 
 // UPDATE VIDEO BY ID
 router.patch("/:id", videoController.UpdateVideo);
@@ -23,5 +23,8 @@ router.delete("/:id", videoController.DeleteVideo);
 
 // CREATE NEW VIDEO
 router.post("/finalize", videoController.GenerateVideo);
+
+// CREATE NEW VIDEO
+router.post("/wyr/generate", videoController.GenerateWYRVideo);
 
 module.exports = router;
