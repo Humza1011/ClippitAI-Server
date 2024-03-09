@@ -148,6 +148,7 @@ const GenerateWYRVideo = async (req, res, next) => {
       path: soundEffectPath,
       duration: soundEffectDuration,
     };
+
     await downloadQuestionImages(questions);
 
     let audioDurations = [];
@@ -191,8 +192,6 @@ const GenerateWYRVideo = async (req, res, next) => {
 
     // Respond with the URL of the uploaded file
     return res.status(200).json({ url: result.secure_url });
-
-    // return res.status(200).json({ message: "success" });
   } catch (error) {
     console.error(error);
     res.status(500).json({
