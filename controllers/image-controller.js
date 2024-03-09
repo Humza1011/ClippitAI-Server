@@ -77,7 +77,6 @@ const GenerateImage = async (req, res) => {
         },
       }
     );
-    console.log(output);
     res.status(200).json(output);
   } catch (error) {
     console.error("Error generating image:", error);

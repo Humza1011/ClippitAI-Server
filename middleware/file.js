@@ -31,7 +31,9 @@ const UploadFile = async (req, res, next) => {
 
 const UploadMultipleFiles = async (req, res, next) => {
   try {
-    const fileUrls = req.files.map((file) => ({
+    const ids = req.body.ids;
+    const fileUrls = req.files.map((file, index) => ({
+      id: ids[index],
       url: file.path,
     }));
     return res.status(200).json(fileUrls);

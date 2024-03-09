@@ -183,8 +183,8 @@ const GenerateWYRVideo = async (req, res, next) => {
 
     for (let i = 0; i < questions.length; i++) {
       const audioPath = `./assets/Temp/narration_${i}.mp3`;
-      const imagePath1 = `./assets/Temp/question_${i}_part_0`;
-      const imagePath2 = `./assets/Temp/question_${i}_part_1`;
+      const imagePath1 = `./assets/Temp/question_${i}_part_0.png`;
+      const imagePath2 = `./assets/Temp/question_${i}_part_1.png`;
       fs.unlinkSync(audioPath);
       fs.unlinkSync(imagePath1);
       fs.unlinkSync(imagePath2);

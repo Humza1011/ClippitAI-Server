@@ -41,7 +41,6 @@ const generateVideoScript = async (req, res, next) => {
 
     // Extracting the assistant's reply as the script
     const script = completion.choices[0].message.content;
-    console.log(completion.usage);
 
     res.status(200).json({ script });
   } catch (error) {
@@ -61,7 +60,7 @@ const generateWYRQuestions = async (req, res, next) => {
     {
       role: "system",
       content:
-        "You are a creative assistant tasked with generating engaging 'Would You Rather' questions. Each question should have two parts, including a compelling scenario and an approximate percentage indicating the preference, and a simple image prompt description representing that question part. Format each question so that each question is separated by '-', and within each question, each part is separated by '_', and within each part, the scenario, its percentage, and the image prompt description are separated by ':'. Ensure the questions are unique, thought-provoking, and suitable for a general audience.",
+        "You are a creative assistant tasked with generating engaging 'Would You Rather' questions. Each question should have two parts, including a compelling scenario and an approximate percentage indicating the preference, and a simple image prompt description representing that question part. Format each question so that each question is separated by '-', and within each question, each part is separated by '_', and within each part, the scenario, its percentage, and the image prompt description are separated by ':'. Ensure the questions are concise, unique, thought-provoking, and suitable for a general audience.",
     },
     {
       role: "user",
@@ -88,7 +87,6 @@ const generateWYRQuestions = async (req, res, next) => {
       frequency_penalty: 0.0,
       presence_penalty: 0.0,
     });
-    console.log(completion.choices[0].message.content);
     // Extract the completion from the last message from the assistant
     const lastMessage = completion.choices[0].message.content;
     const questionsRaw = lastMessage.trim();
@@ -109,8 +107,6 @@ const generateWYRQuestions = async (req, res, next) => {
       });
       return questionParts;
     });
-
-    console.log(questions);
 
     res.status(200).json({ questions });
   } catch (error) {

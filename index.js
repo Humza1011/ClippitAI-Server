@@ -44,13 +44,13 @@ mongoose
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
-// app.use(cors());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_ORIGIN,
-    credentials: true,
-  })
-);
+app.use(cors());
+// app.use(
+//   cors({
+//     origin: process.env.FRONTEND_ORIGIN,
+//     credentials: true,
+//   })
+// );
 app.use(morgan("tiny"));
 
 // Routes
