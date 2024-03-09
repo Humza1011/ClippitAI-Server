@@ -58,23 +58,9 @@ const DeleteImage = async (req, res, next) => {
 };
 
 const GenerateImage = async (req, res) => {
-  const prompt = req.body.prompt;
+  const { prompt, count } = req.body;
 
   try {
-    // const output = await replicate.run(
-    //   "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
-    //   {
-    //     input: {
-    //       width: 768,
-    //       height: 768,
-    //       prompt: prompt,
-    //       scheduler: "K_EULER_ANCESTRAL",
-    //       num_outputs: 2,
-    //       guidance_scale: 10,
-    //       num_inference_steps: 50,
-    //     },
-    //   }
-    // );
     const output = await replicate.run(
       "lucataco/sdxl-lightning-4step:727e49a643e999d602a896c774a0658ffefea21465756a6ce24b7ea4165eba6a",
       {
@@ -83,9 +69,10 @@ const GenerateImage = async (req, res) => {
           height: 1024,
           prompt: prompt,
           scheduler: "K_EULER",
-          num_outputs: 4,
+          num_outputs: count || 4,
           guidance_scale: 0,
-          negative_prompt: "worst quality, low quality",
+          negative_prompt:
+            "out of frame, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, username, watermark, signature",
           num_inference_steps: 4,
         },
       }

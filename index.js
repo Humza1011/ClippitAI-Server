@@ -14,7 +14,10 @@ const audioRoutes = require("./routes/audio-routes");
 const imageRoutes = require("./routes/image-routes");
 const projectRoutes = require("./routes/project-routes");
 const videoRoutes = require("./routes/video-routes");
-const { generateVideoScript } = require("./middleware/scriptGeneration");
+const {
+  generateVideoScript,
+  generateWYRQuestions,
+} = require("./middleware/scriptGeneration");
 const {
   UploadMultipleFilesMulter,
   UploadMultipleFiles,
@@ -62,6 +65,8 @@ app.get("/", (req, res) => {
 });
 
 app.post("/script/generate", generateVideoScript);
+app.get("/wyr-questions/generate", generateWYRQuestions);
+
 app.post(
   "/file/upload/multiple",
   UploadMultipleFilesMulter,

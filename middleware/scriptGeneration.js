@@ -52,4 +52,73 @@ const generateVideoScript = async (req, res, next) => {
   }
 };
 
-module.exports = { generateVideoScript };
+const generateWYRQuestions = async (req, res, next) => {
+  // Number of questions you want to generate
+  const numberOfQuestions = 10;
+
+  // Constructing messages for the conversation
+  const messages = [
+    {
+      role: "system",
+      content:
+        "You are a creative assistant tasked with generating engaging 'Would You Rather' questions. Each question should have two parts, including a compelling scenario and an approximate percentage indicating the preference, and a simple image prompt description representing that question part. Format each question so that each question is separated by '-', and within each question, each part is separated by '_', and within each part, the scenario, its percentage, and the image prompt description are separated by ':'. Ensure the questions are unique, thought-provoking, and suitable for a general audience.",
+    },
+    {
+      role: "user",
+      content: `Can you generate two 'Would You Rather' questions for me? They should be formatted with each question separated by '-', question parts separated by '_', and within each part, the scenario, its percentage, and the image prompt description separated by ':'.`,
+    },
+    {
+      role: "assistant",
+      content: `Sure, here's an example of two would you rather questions in the specified format:
+      fly like a bird:80:A bird soaring high above mountains_swim like a fish:20:A fish swimming in a coral reef - be invisible:51:A person fading into thin air_have super strength:49:A superhero lifting a car`,
+    },
+    {
+      role: "user",
+      content: `Great, please generate ${numberOfQuestions} 'Would You Rather' questions in the same format.`,
+    },
+  ];
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: messages,
+      max_tokens: 1800,
+      temperature: 0.7,
+      top_p: 1.0,
+      frequency_penalty: 0.0,
+      presence_penalty: 0.0,
+    });
+    console.log(completion.choices[0].message.content);
+    // Extract the completion from the last message from the assistant
+    const lastMessage = completion.choices[0].message.content;
+    const questionsRaw = lastMessage.trim();
+
+    const questionsSplit = questionsRaw.trim().split("\n");
+
+    // Parsing each question to extract parts and percentage
+    const questions = questionsSplit.map((question) => {
+      question = question.replace(/^\- /, "").trim();
+      const parts = question.split("_");
+      const questionParts = parts.map((part) => {
+        const [text, percentage, imagePrompt] = part.split(":");
+        return {
+          questionText: text.trim(),
+          percentage: parseInt(percentage.trim(), 10),
+          imagePrompt: imagePrompt.trim(),
+        };
+      });
+      return questionParts;
+    });
+
+    console.log(questions);
+
+    res.status(200).json({ questions });
+  } catch (error) {
+    console.error("Error generating 'Would You Rather' questions:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to generate questions", message: error.message });
+  }
+};
+
+module.exports = { generateVideoScript, generateWYRQuestions };

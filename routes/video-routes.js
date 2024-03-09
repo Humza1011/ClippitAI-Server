@@ -13,7 +13,7 @@ router.get("/", videoController.GetVideos);
 router.get("/single/:id", videoController.GetVideoByID);
 
 // CREATE NEW VIDEOS
-router.post("/",UploadMultipleFilesMulter, videoController.CreateVideos);
+router.post("/", UploadMultipleFilesMulter, videoController.CreateVideos);
 
 // UPDATE VIDEO BY ID
 router.patch("/:id", videoController.UpdateVideo);
@@ -21,7 +21,10 @@ router.patch("/:id", videoController.UpdateVideo);
 // DELETE VIDEO BY ID
 router.delete("/:id", videoController.DeleteVideo);
 
-// CREATE NEW VIDEO
-router.post("/finalize", videoController.GenerateVideo);
+// CREATE NEW GPT STORY STYLE VIDEO
+router.post("/gpt-story", videoController.GenerateGPTStoryVideo);
+
+// CREATE NEW WOULD YOU RATHER STYLE VIDEO
+router.post("/would-you-rather", videoController.GenerateWYRVideo);
 
 module.exports = router;
