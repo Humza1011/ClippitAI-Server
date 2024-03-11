@@ -240,10 +240,10 @@ const compileVideo = async ({
     }
 
     // Add subtitles if provided
-    // if (subtitlesPath) {
-    //   command.input(subtitlesPath);
-    //   command.outputOptions(["-c:s mov_text"]);
-    // }
+    if (subtitlesPath) {
+      command.input(subtitlesPath);
+      command.outputOptions(["-c:s mov_text"]);
+    }
 
     // Add the filter complex to the command
     let complexFilterString = filterComplex.join("");
@@ -262,10 +262,10 @@ const compileVideo = async ({
     }
 
     // If subtitles are provided, add them to the map options
-    // if (subtitlesPath) {
-    //   const subtitleIndex = musicPath ? 3 : 2;
-    //   mapOptions.push(`-map ${subtitleIndex}`);
-    // }
+    if (subtitlesPath) {
+      const subtitleIndex = musicPath ? 3 : 2;
+      mapOptions.push(`-map ${subtitleIndex}`);
+    }
 
     // Final output options, including dynamic map options
     command
