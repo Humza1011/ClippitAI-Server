@@ -227,7 +227,8 @@ const compileVideo = async ({
     ];
 
     if (!musicPath) {
-      command.input(narrationPath).audioFilters("volume=1.0");
+      command.input(narrationPath)
+      filterComplex.push("[1:a]volume=1.0[narration];");
     } else {
       command.input(narrationPath);
       command.input(musicPath);
@@ -239,10 +240,10 @@ const compileVideo = async ({
     }
 
     // Add subtitles if provided
-    if (subtitlesPath) {
-      command.input(subtitlesPath);
-      command.outputOptions(["-c:s mov_text"]);
-    }
+    // if (subtitlesPath) {
+    //   command.input(subtitlesPath);
+    //   command.outputOptions(["-c:s mov_text"]);
+    // }
 
     // Add the filter complex to the command
     const complexFilterString = filterComplex.join("");
@@ -250,17 +251,15 @@ const compileVideo = async ({
 
     const mapOptions = ["-map [fv]"];
 
-    if (!musicPath) {
-      mapOptions.push("-map 1:a");
-    } else {
-      mapOptions.push("-map [outa]");
-    }
+    // if (!musicPath) {
+    //   mapOptions.push("-map 1:a");
+    // }
 
     // If subtitles are provided, add them to the map options
-    if (subtitlesPath) {
-      const subtitleIndex = musicPath ? 3 : 2;
-      mapOptions.push(`-map ${subtitleIndex}`);
-    }
+    // if (subtitlesPath) {
+    //   const subtitleIndex = musicPath ? 3 : 2;
+    //   mapOptions.push(`-map ${subtitleIndex}`);
+    // }
 
     // Final output options, including dynamic map options
     command
