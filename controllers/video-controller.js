@@ -225,7 +225,7 @@ const compileVideo = async ({
     }
 
     let filterComplex = [
-      "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv];",
+      "[0:v]scale=1080:1920[fv];",
     ];
 
     if (!musicPath) {
