@@ -224,22 +224,22 @@ const compileVideo = async ({
       command.input(localVideoPath).inputOptions(["-stream_loop -1"]);
     }
 
-    let filterComplex = [
-      "[0:v]scale=1080:1920[fv];",
-    ];
+    let filterComplex = ["[0:v]scale=1080:1920,setsar=1[fv];"];
 
-    if (!musicPath) {
-      command.input(narrationPath);
-      filterComplex.push("[1:a]volume=1.0[narration];");
-    } else {
-      command.input(narrationPath);
-      command.input(musicPath);
-      filterComplex.push(
-        "[1:a]volume=1.0[narration];",
-        "[2:a]volume=0.2[music];",
-        "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[audioMix];"
-      );
-    }
+    // if (!musicPath) {
+    //   console.log();
+    //   command.input(narrationPath);
+    //   filterComplex.push("[1:a]volume=1.0[narration];");
+    // } 
+    // else {
+    //   command.input(narrationPath);
+    //   command.input(musicPath);
+    //   filterComplex.push(
+    //     "[1:a]volume=1.0[narration];",
+    //     "[2:a]volume=0.2[music];",
+    //     "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[audioMix];"
+    //   );
+    // }
 
     // Add subtitles if provided
     // if (subtitlesPath) {
@@ -268,13 +268,14 @@ const compileVideo = async ({
       .output(outputPath)
       .outputOptions([
         ...mapOptions,
-        "-c:v libx264",
+        // "-c:v libx264",
         "-profile:v baseline",
         "-level 3.0",
         "-pix_fmt yuv420p",
         // "-s 1080x1920", // Force Vertical Resolution (Aspect Ratio 9:16)
-        "-c:a aac",
+        // "-c:a aac",
         "-shortest",
+        "-v verbose",
       ])
       .on("start", (commandLine) => {
         console.log("Spawned FFmpeg with command: " + commandLine);
