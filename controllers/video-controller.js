@@ -224,7 +224,7 @@ const compileVideo = async ({
       command.input(localVideoPath).inputOptions(["-stream_loop -1"]);
     }
 
-    let filterComplex = ["[0:v]scale=1080:1920,setsar=1[fv]"];
+    let filterComplex = ["[0:v]scale=1080:1920,setsar=1[fv];"];
 
     // if (!musicPath) {
     //   console.log();
