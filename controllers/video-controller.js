@@ -224,7 +224,7 @@ const compileVideo = async ({
       command.input(localVideoPath).inputOptions(["-stream_loop -1"]);
     }
 
-    let filterComplex = ["[0:v]scale=1080:1920,setsar=1[fv];"];
+    let filterComplex = ["[0:v]scale=1080:1920,setsar=1[fv]"];
 
     // if (!musicPath) {
     //   console.log();
@@ -274,7 +274,7 @@ const compileVideo = async ({
         "-pix_fmt yuv420p",
         // "-s 1080x1920", // Force Vertical Resolution (Aspect Ratio 9:16)
         // "-c:a aac",
-        "-shortest",
+        // "-shortest",
         "-v verbose",
       ])
       .on("start", (commandLine) => {
