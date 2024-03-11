@@ -229,7 +229,7 @@ const compileVideo = async ({
 
     if (!musicPath) {
       console.log("no music path");
-      command.input(narrationPath);
+      command.input(narrationPath).audioFilters("volume=1.0");
       // filterComplex.push("[1:a]volume=1.0[narration]");
     }
     // else {
