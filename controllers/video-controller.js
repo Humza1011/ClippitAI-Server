@@ -82,7 +82,6 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
     const audioPath = "./assets/Temp/audio.mp3";
     await generateTTS(script, voiceSettings, audioPath);
     const audioDuration = await getAudioDuration(audioPath);
-    console.log("Audio Duration: ", audioDuration);
 
     const subtitlesPath = "./assets/Temp/subtitles.srt";
     await generateSubtitlesFile(script, audioDuration, subtitlesPath);
@@ -214,6 +213,8 @@ const compileVideo = async ({
   return new Promise(async (resolve, reject) => {
     let command = ffmpeg();
 
+    console.log("Video Duration: ", videoDuration);
+
     // Add background
     if (backgroundPath.endsWith(".png") || backgroundPath.endsWith(".jpg")) {
       const localImagePath = "./assets/Temp/backgroundImage.png";
@@ -283,7 +284,7 @@ const compileVideo = async ({
         "-pix_fmt yuv420p",
         // "-s 1080x1920", // Force Vertical Resolution (Aspect Ratio 9:16)
         "-c:a aac",
-        "-shortest",
+        // "-shortest",
         "-v verbose",
       ])
       .on("start", (commandLine) => {
