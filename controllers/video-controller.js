@@ -216,7 +216,7 @@ const compileVideo = async ({
     if (backgroundPath.endsWith(".png") || backgroundPath.endsWith(".jpg")) {
       const localImagePath = "./assets/Temp/backgroundImage.png";
       await downloadFile(backgroundPath, localImagePath);
-      command.input(localImagePath).loop(10).inputOptions(["-framerate 25"]);
+      command.input(localImagePath).loop().inputOptions(["-framerate 25"]);
     } else {
       const localVideoPath = "./assets/Temp/backgroundVideo.mp4";
       await downloadFile(backgroundPath, localVideoPath);
