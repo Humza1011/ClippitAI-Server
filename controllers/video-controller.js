@@ -108,10 +108,10 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
       resource_type: "video",
       type: "upload",
     });
-    const result2 = await cloudinary.uploader.upload(vttPath, {
-      resource_type: "raw",
-      type: "upload",
-    });
+    // const result2 = await cloudinary.uploader.upload(vttPath, {
+    //   resource_type: "raw",
+    //   type: "upload",
+    // });
 
     // Delete the temporary file after upload
     fs.unlinkSync(audioPath);
@@ -124,9 +124,10 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
     fs.unlinkSync(backgroundMediaPath);
 
     // Respond with the URL of the uploaded file
-    return res
-      .status(200)
-      .json({ url: result.secure_url, subtitles: result2.secure_url });
+    return res.status(200).json({
+      url: result.secure_url,
+      // subtitles: result2.secure_url
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -215,7 +216,7 @@ const compileVideo = async ({
     if (backgroundPath.endsWith(".png") || backgroundPath.endsWith(".jpg")) {
       const localImagePath = "./assets/Temp/backgroundImage.png";
       await downloadFile(backgroundPath, localImagePath);
-      command.input(localImagePath).loop().inputOptions(["-framerate 25"]);
+      command.input(localImagePath).loop(10).inputOptions(["-framerate 25"]);
     } else {
       const localVideoPath = "./assets/Temp/backgroundVideo.mp4";
       await downloadFile(backgroundPath, localVideoPath);
@@ -230,7 +231,7 @@ const compileVideo = async ({
     //   console.log("no music path");
     //   command.input(narrationPath);
     //   filterComplex.push("[1:a]volume=1.0[narration]");
-    // } 
+    // }
     // else {
     //   command.input(narrationPath);
     //   command.input(musicPath);
