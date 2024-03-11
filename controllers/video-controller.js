@@ -218,52 +218,52 @@ const compileVideo = async ({
       command
         .input(localImagePath)
         .loop()
-        .inputOptions(["-framerate 25"])
+        .inputOptions(['-framerate 25'])
         .complexFilter(
           [
-            "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv];",
+            '[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv];',
           ],
-          "fv"
+          'fv'
         );
     } else {
       const localVideoPath = "./assets/Temp/backgroundVideo.mp4";
       await downloadFile(backgroundPath, localVideoPath);
       command
         .input(localVideoPath)
-        .inputOptions(["-stream_loop -1"])
+        .inputOptions(['-stream_loop -1'])
         .complexFilter(
           [
-            "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv];",
+            '[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv];',
           ],
-          "fv"
+          'fv'
         );
     }
 
     if (!musicPath) {
-      command.input(narrationPath).audioFilters("volume=1.0");
+      command.input(narrationPath).audioFilters('volume=1.0');
     } else {
       command.input(narrationPath);
       command.input(musicPath);
       command.complexFilter(
         [
-          "[1:a]volume=1.0[narration]",
-          "[2:a]volume=0.2[music]",
-          "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[audioMix]",
+          '[1:a]volume=1.0[narration]',
+          '[2:a]volume=0.2[music]',
+          '[narration][music]amix=inputs=2:duration=first:dropout_transition=3[audioMix]',
         ],
-        "audioMix"
+        'audioMix'
       );
     }
 
     // Add subtitles if provided
     if (subtitlesPath) {
       command.input(subtitlesPath);
-      command.outputOptions(["-c:s mov_text"]);
+      command.outputOptions(['-c:s mov_text']);
     }
 
-    const mapOptions = ["-map 0:v"];
+    const mapOptions = ['-map 0:v'];
 
     if (!musicPath) {
-      mapOptions.push("-map 1:a");
+      mapOptions.push('-map 1:a');
     }
 
     // If subtitles are provided, add them to the map options
@@ -277,14 +277,17 @@ const compileVideo = async ({
       .output(outputPath)
       .outputOptions([
         ...mapOptions,
-        "-c:v libx264",
-        "-profile:v baseline",
-        "-level 3.0",
-        "-pix_fmt yuv420p",
+        '-c:v libx264',
+        '-profile:v baseline',
+        '-level 3.0',
+        '-pix_fmt yuv420p',
         // "-s 1080x1920", // Force Vertical Resolution (Aspect Ratio 9:16)
-        "-c:a aac",
-        "-shortest",
+        '-c:a aac',
+        '-shortest',
       ])
+      .on("start", (commandLine) => {
+        console.log("Spawned FFmpeg with command: " + commandLine);
+      })
       .on("end", function () {
         console.log("Processing finished successfully");
         resolve();
