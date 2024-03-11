@@ -215,9 +215,7 @@ const compileVideo = async ({
     if (backgroundPath.endsWith(".png") || backgroundPath.endsWith(".jpg")) {
       const localImagePath = "./assets/Temp/backgroundImage.png";
       await downloadFile(backgroundPath, localImagePath);
-      command
-        .input(localImagePath)
-        .inputOptions([`-t 10`, `-loop 1`, `-framerate 25`]);
+      command.input(localImagePath).loop().inputOptions(["-framerate 25"]);
     } else {
       const localVideoPath = "./assets/Temp/backgroundVideo.mp4";
       await downloadFile(backgroundPath, localVideoPath);
@@ -225,14 +223,14 @@ const compileVideo = async ({
     }
 
     let filterComplex = [
-      "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv]",
+      "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv];",
     ];
 
-    // if (!musicPath) {
-    //   console.log();
-    //   command.input(narrationPath);
-    //   filterComplex.push("[1:a]volume=1.0[narration];");
-    // }
+    if (!musicPath) {
+      console.log("no music path");
+      command.input(narrationPath);
+      filterComplex.push("[1:a]volume=1.0[narration]");
+    } 
     // else {
     //   command.input(narrationPath);
     //   command.input(musicPath);
