@@ -224,23 +224,20 @@ const compileVideo = async ({
     }
 
     let filterComplex = [
-      "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv]",
+      "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv];",
     ];
 
     if (!musicPath) {
-      console.log("no music path");
       command.input(narrationPath).audioFilters("volume=1.0");
-      // filterComplex.push("[1:a]volume=1.0[narration]");
+    } else {
+      command.input(narrationPath);
+      command.input(musicPath);
+      filterComplex.push(
+        "[1:a]volume=1.0[narration];",
+        "[2:a]volume=0.2[music];",
+        "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[audioMix]"
+      );
     }
-    // else {
-    //   command.input(narrationPath);
-    //   command.input(musicPath);
-    //   filterComplex.push(
-    //     "[1:a]volume=1.0[narration];",
-    //     "[2:a]volume=0.2[music];",
-    //     "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[audioMix];"
-    //   );
-    // }
 
     // Add subtitles if provided
     // if (subtitlesPath) {
@@ -250,12 +247,18 @@ const compileVideo = async ({
 
     // Add the filter complex to the command
     const complexFilterString = filterComplex.join("");
+    if (complexFilterString.slice(-1) === ";") {
+      complexFilterString = complexFilterString.slice(0, -1);
+    }
+    console.log("Complex Filter: ", complexFilterString);
     command.complexFilter(complexFilterString);
 
     const mapOptions = ["-map [fv]"];
 
     if (!musicPath) {
       mapOptions.push("-map 1:a");
+    } else {
+      mapOptions.push("-map [audioMix]");
     }
 
     // If subtitles are provided, add them to the map options
