@@ -224,13 +224,15 @@ const compileVideo = async ({
       command.input(localVideoPath).inputOptions(["-stream_loop -1"]);
     }
 
-    let filterComplex = ["[0:v]scale=1080:1920,setsar=1[fv];"];
+    let filterComplex = [
+      "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv]",
+    ];
 
     // if (!musicPath) {
     //   console.log();
     //   command.input(narrationPath);
     //   filterComplex.push("[1:a]volume=1.0[narration];");
-    // } 
+    // }
     // else {
     //   command.input(narrationPath);
     //   command.input(musicPath);
@@ -268,13 +270,13 @@ const compileVideo = async ({
       .output(outputPath)
       .outputOptions([
         ...mapOptions,
-        // "-c:v libx264",
+        "-c:v libx264",
         "-profile:v baseline",
         "-level 3.0",
         "-pix_fmt yuv420p",
         // "-s 1080x1920", // Force Vertical Resolution (Aspect Ratio 9:16)
-        // "-c:a aac",
-        // "-shortest",
+        "-c:a aac",
+        "-shortest",
         "-v verbose",
       ])
       .on("start", (commandLine) => {
