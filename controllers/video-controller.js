@@ -96,6 +96,7 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
     await compileVideo({
       narrationPath: audioPath,
       backgroundPath: backgroundPath,
+      videoDuration: audioDuration + 0.5,
       musicPath: backgroundAudio ? backgroundAudio.url : null,
       subtitlesPath: subtitlesPath,
       outputPath: outputPath,
@@ -205,6 +206,7 @@ const GenerateWYRVideo = async (req, res, next) => {
 const compileVideo = async ({
   narrationPath,
   backgroundPath,
+  videoDuration,
   musicPath,
   subtitlesPath,
   outputPath,
@@ -216,7 +218,10 @@ const compileVideo = async ({
     if (backgroundPath.endsWith(".png") || backgroundPath.endsWith(".jpg")) {
       const localImagePath = "./assets/Temp/backgroundImage.png";
       await downloadFile(backgroundPath, localImagePath);
-      command.input(localImagePath).loop().inputOptions(["-framerate 25"]);
+      command
+        .input(localImagePath)
+        .loop(videoDuration)
+        .inputOptions(["-framerate 25"]);
     } else {
       const localVideoPath = "./assets/Temp/backgroundVideo.mp4";
       await downloadFile(backgroundPath, localVideoPath);
