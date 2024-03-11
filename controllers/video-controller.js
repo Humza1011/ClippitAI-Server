@@ -246,7 +246,7 @@ const compileVideo = async ({
     // }
 
     // Add the filter complex to the command
-    const complexFilterString = filterComplex.join("");
+    let complexFilterString = filterComplex.join("");
     if (complexFilterString.slice(-1) === ";") {
       complexFilterString = complexFilterString.slice(0, -1);
     }
