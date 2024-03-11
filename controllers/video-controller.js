@@ -254,9 +254,9 @@ const compileVideo = async ({
 
     const mapOptions = ["-map [fv]"];
 
-    // if (!musicPath) {
-    //   mapOptions.push("-map 1:a");
-    // }
+    if (!musicPath) {
+      mapOptions.push("-map 1:a");
+    }
 
     // If subtitles are provided, add them to the map options
     // if (subtitlesPath) {
