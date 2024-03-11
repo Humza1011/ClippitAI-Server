@@ -215,7 +215,9 @@ const compileVideo = async ({
     if (backgroundPath.endsWith(".png") || backgroundPath.endsWith(".jpg")) {
       const localImagePath = "./assets/Temp/backgroundImage.png";
       await downloadFile(backgroundPath, localImagePath);
-      command.input(localImagePath).loop().inputOptions(["-framerate 25"]);
+      command
+        .input(localImagePath)
+        .inputOptions([[`-loop 1`, `-framerate 25`]]);
     } else {
       const localVideoPath = "./assets/Temp/backgroundVideo.mp4";
       await downloadFile(backgroundPath, localVideoPath);
@@ -227,7 +229,7 @@ const compileVideo = async ({
     ];
 
     if (!musicPath) {
-      command.input(narrationPath)
+      command.input(narrationPath);
       filterComplex.push("[1:a]volume=1.0[narration];");
     } else {
       command.input(narrationPath);
