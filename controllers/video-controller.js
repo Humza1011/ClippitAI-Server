@@ -226,7 +226,9 @@ const compileVideo = async ({
     } else {
       const localVideoPath = "./assets/Temp/backgroundVideo.mp4";
       await downloadFile(backgroundPath, localVideoPath);
-      command.input(localVideoPath).inputOptions(["-stream_loop -1"]);
+      command
+        .input(localVideoPath)
+        .inputOptions([`-t ${videoDuration}`, "-stream_loop -1"]);
     }
 
     let filterComplex = [
