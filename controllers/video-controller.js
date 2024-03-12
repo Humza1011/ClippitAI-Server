@@ -113,6 +113,8 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
       type: "upload",
     });
 
+    console.log(result.secure_url);
+
     // Delete the temporary file after upload
     fs.unlinkSync(audioPath);
     fs.unlinkSync(outputPath);
