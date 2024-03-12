@@ -86,4 +86,7 @@ app.use((err, req, res, next) => {
 
 // Server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () =>
+  console.log(`Server running on port ${PORT}`)
+);
+server.setTimeout(60000);
