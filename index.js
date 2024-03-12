@@ -89,4 +89,4 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)
 );
-server.setTimeout(60000);
+server.setTimeout(600000);
