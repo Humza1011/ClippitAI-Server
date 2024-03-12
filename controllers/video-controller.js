@@ -95,7 +95,7 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
     await compileVideo({
       narrationPath: audioPath,
       backgroundPath: backgroundPath,
-      videoDuration: audioDuration + 0.5,
+      videoDuration: audioDuration,
       musicPath: backgroundAudio ? backgroundAudio.url : null,
       subtitlesPath: subtitlesPath,
       outputPath: outputPath,
@@ -108,10 +108,10 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
       resource_type: "video",
       type: "upload",
     });
-    // const result2 = await cloudinary.uploader.upload(vttPath, {
-    //   resource_type: "raw",
-    //   type: "upload",
-    // });
+    const result2 = await cloudinary.uploader.upload(vttPath, {
+      resource_type: "raw",
+      type: "upload",
+    });
 
     // Delete the temporary file after upload
     fs.unlinkSync(audioPath);
@@ -126,7 +126,7 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
     // Respond with the URL of the uploaded file
     return res.status(200).json({
       url: result.secure_url,
-      // subtitles: result2.secure_url
+      subtitles: result2.secure_url,
     });
   } catch (error) {
     console.error(error);
