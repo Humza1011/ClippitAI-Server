@@ -3,6 +3,7 @@ const axios = require("axios");
 const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
+// const { v4: uuidv4 } = require("uuid");
 
 //        ********** FUNCTIONS ***********
 
@@ -71,69 +72,66 @@ const DeleteVideo = async (req, res, next) => {
 };
 
 const GenerateGPTStoryVideo = async (req, res, next) => {
-  const {
-    script,
-    voiceSettings,
-    backgroundImage,
-    backgroundAudio,
-    backgroundVideo,
-  } = req.body;
+  const { images, voiceSettings, backgroundAudio, backgroundVideo, userId } =
+    req.body;
+
   try {
-    const audioPath = "./assets/Temp/audio.mp3";
-    await generateTTS(script, voiceSettings, audioPath);
-    const audioDuration = await getAudioDuration(audioPath);
+    const backgroundVideoPath = "./assets/Temp/backgroundVideo.mp4";
+    await downloadFile(
+      backgroundVideo.url,
+      "./assets/Temp/backgroundVideo.mp4"
+    );
 
-    const subtitlesPath = "./assets/Temp/subtitles.srt";
-    await generateSubtitlesFile(script, audioDuration, subtitlesPath);
+    await Promise.all(
+      images.map((image, index) =>
+        downloadFile(image.url, `./assets/Temp/image_${index}.png`)
+      )
+    );
 
-    const backgroundPath = backgroundVideo
-      ? backgroundVideo.url
-      : backgroundImage;
+    let promptAudioDurations = [];
+    let commentAudioDurations = [];
+    for (let i = 0; i < images.length; i++) {
+      const promptAudioPath = `./assets/Temp/prompt_narration_${i}.mp3`;
+      const commentAudioPath = `./assets/Temp/comment_narration_${i}.mp3`;
+      await generateTTS(images[i].prompt, voiceSettings, promptAudioPath);
+      await generateTTS(images[i].comment, voiceSettings, commentAudioPath);
+      const promptAudioDuration = await getAudioDuration(promptAudioPath);
+      const commentAudioDuration = await getAudioDuration(commentAudioPath);
+      promptAudioDurations.push(promptAudioDuration);
+      commentAudioDurations.push(commentAudioDuration);
+    }
 
     const outputPath = "./assets/Temp/output.mp4";
 
-    await compileVideo({
-      narrationPath: audioPath,
-      backgroundPath: backgroundPath,
-      videoDuration: audioDuration,
-      musicPath: backgroundAudio ? backgroundAudio.url : null,
-      subtitlesPath: subtitlesPath,
-      outputPath: outputPath,
+    await compileGPTStoryVideo({
+      images,
+      backgroundVideoPath,
+      backgroundAudioPath: backgroundAudio ? backgroundAudio.url : "",
+      promptAudioDurations,
+      commentAudioDurations,
+      outputPath,
     });
-
-    const vttPath = "./assets/Temp/subtitles.vtt";
-    await convertSrtToVtt(subtitlesPath, vttPath);
 
     const result = await cloudinary.uploader.upload(outputPath, {
       resource_type: "video",
       type: "upload",
     });
-    const result2 = await cloudinary.uploader.upload(vttPath, {
-      resource_type: "raw",
-      type: "upload",
-    });
 
-    console.log(result.secure_url);
-
-    // Delete the temporary file after upload
-    fs.unlinkSync(audioPath);
-    fs.unlinkSync(outputPath);
-    fs.unlinkSync(subtitlesPath);
-    fs.unlinkSync(vttPath);
-    const backgroundMediaPath = backgroundVideo
-      ? "./assets/Temp/backgroundVideo.mp4"
-      : "./assets/Temp/backgroundImage.png";
-    fs.unlinkSync(backgroundMediaPath);
+    // const video = new Video({
+    //   url: result.secure_url,
+    //   title: `Video ${uuidv4()}`,
+    //   type: "project",
+    //   userId: userId,
+    // });
 
     // Respond with the URL of the uploaded file
     return res.status(200).json({
       url: result.secure_url,
-      subtitles: result2.secure_url,
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      message: "Failed to convert text to speech",
+      message: "Failed to create gpt story video",
       error: error.message,
     });
   }
@@ -204,105 +202,175 @@ const GenerateWYRVideo = async (req, res, next) => {
   }
 };
 
-const compileVideo = async ({
-  narrationPath,
-  backgroundPath,
-  videoDuration,
-  musicPath,
-  subtitlesPath,
+const compileGPTStoryVideo = async ({
+  images,
+  backgroundVideoPath,
+  backgroundAudioPath,
+  promptAudioDurations,
+  commentAudioDurations,
   outputPath,
 }) => {
   return new Promise(async (resolve, reject) => {
     let command = ffmpeg();
 
-    console.log("Video Duration: ", videoDuration);
+    const afterPromptPause = 1;
+    const afterCommentPause = 1;
+    const totalDuration =
+      promptAudioDurations.reduce((total, duration) => total + duration, 0) +
+      commentAudioDurations.reduce((total, duration) => total + duration, 0) +
+      images.length * (afterCommentPause + afterPromptPause) -
+      afterCommentPause;
+    console.log("Total Duration: ", totalDuration);
 
-    // Add background
-    if (backgroundPath.endsWith(".png") || backgroundPath.endsWith(".jpg")) {
-      const localImagePath = "./assets/Temp/backgroundImage.png";
-      await downloadFile(backgroundPath, localImagePath);
-      command
-        .input(localImagePath)
-        .loop(videoDuration)
-        .inputOptions(["-framerate 25"]);
-    } else {
-      const localVideoPath = "./assets/Temp/backgroundVideo.mp4";
-      await downloadFile(backgroundPath, localVideoPath);
-      command
-        .input(localVideoPath)
-        .inputOptions([`-t ${videoDuration}`, "-stream_loop -1"]);
-    }
+    const videoHeight = 1920;
+    const videoWidth = 1080;
+    const backgroundVideoHeight = videoHeight / 2;
 
+    command
+      .input(backgroundVideoPath)
+      .inputOptions([`-t ${totalDuration}`, "-stream_loop -1"]);
+
+    // Filter for background video (bottom half)
     let filterComplex = [
-      "[0:v]scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[fv];",
+      `[0:v]scale=${videoWidth}:${backgroundVideoHeight}[bg];`,
+      `[bg]pad=${videoWidth}:${videoHeight}:(ow-iw)/2:${backgroundVideoHeight},setsar=1[fv];`,
     ];
 
-    if (!musicPath) {
-      command.input(narrationPath).audioFilters("volume=1.0");
-    } else {
-      command.input(narrationPath);
-      command.input(musicPath);
+    if (backgroundAudioPath) {
+      command
+        .input(backgroundAudioPath)
+        .inputOptions([`-t ${totalDuration}`, "-stream_loop -1"]);
+      filterComplex.push(`[1:a]volume=0.1[audioBg];`);
+    }
+
+    // Add question images and overlay them on the background
+    let inputIndex = backgroundAudioPath ? 2 : 1;
+    let startTime = 0;
+    images.forEach((image, index) => {
+      const promptDuration = promptAudioDurations[index] + afterPromptPause;
+      const commentDuration = commentAudioDurations[index] + afterCommentPause;
+      const duration = promptDuration + commentDuration;
+      const promptEndTime = startTime + promptDuration;
+      const endTime = startTime + duration;
+
+      // Add Prompt Circle Image
+      const yPosChatCircle = "H/4 - 44";
+      command
+        .input("./assets/chatCircle.png")
+        .inputOptions([`-t ${promptDuration}`, `-loop 1`]);
       filterComplex.push(
-        "[1:a]volume=1.0[narration];",
-        "[2:a]volume=0.2[music];",
-        "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[audioMix]"
+        `[${inputIndex}:v]scale=50:50[img${index}];`,
+        `[fv][img${index}]overlay=x=200:y=${yPosChatCircle}:enable='between(t,${startTime},${promptEndTime})'[fv];`
       );
+      inputIndex++;
+
+      // Add the Generated Image
+      const yPosImage = "160";
+      const localImagePath = `./assets/Temp/image_${index}.png`;
+      command
+        .input(localImagePath)
+        .inputOptions([`-t ${commentDuration}`, `-loop 1`]);
+      filterComplex.push(
+        `[${inputIndex}:v]scale=650:650[img${index}];`,
+        `[fv][img${index}]overlay=x=(W-w)/2:y=${yPosImage}:enable='between(t,${promptEndTime},${endTime})'[fv];`
+      );
+      inputIndex++;
+
+      const yPosPromptHeadingText = "H/4 - 30";
+      const yPosPromptText = "H/4 + 20";
+      const yPosCommentText =
+        image.comment.length <= 48 ? "H/2 - 30" : "H/2 - 80";
+
+      const formattedPromptText = splitTextIntoLines(image.prompt, 42);
+      const formattedCommentText = splitTextIntoLines(image.comment, 48);
+
+      filterComplex.push(
+        `[fv]drawtext=text='You':fontfile='./assets/Font/Roboto-Medium.ttf':fontsize=32:fontcolor=white:x=280:y=${yPosPromptHeadingText}:enable='between(t,${startTime},${promptEndTime})'[fv];`
+      );
+      filterComplex.push(
+        `[fv]drawtext=text='${formattedPromptText}':fontfile='./assets/Font/Roboto-Medium.ttf':fontsize=34:fontcolor=white:x=280:y=${yPosPromptText}:enable='between(t,${startTime},${promptEndTime})'[fv];`
+      );
+
+      filterComplex.push(
+        `[fv]drawtext=text='${formattedCommentText}':fontfile='./assets/Font/Roboto-Medium.ttf':fontsize=48:fontcolor=white:box=1:boxcolor=black@0.4:boxborderw=10:x=(W-tw)/2:y=${yPosCommentText}:enable='between(t,${promptEndTime},${endTime})'[fv];`
+      );
+
+      // Add Prompt Narration Audio
+      const promptNarrationPath = `./assets/Temp/prompt_narration_${index}.mp3`;
+      command.input(promptNarrationPath);
+      const delayPrompt = afterCommentPause * 1000;
+      if (index === 0) {
+        filterComplex.push(`[${inputIndex}:a]adelay=0|0[pa${index}];`);
+      } else {
+        filterComplex.push(
+          `[${inputIndex}:a]adelay=${delayPrompt}|${delayPrompt}[pa${index}];`
+        );
+      }
+
+      inputIndex++;
+
+      // Add Comment Narration Audio
+      const commentNarrationPath = `./assets/Temp/comment_narration_${index}.mp3`;
+      command.input(commentNarrationPath);
+      const delayComment = afterPromptPause * 1000;
+      filterComplex.push(
+        `[${inputIndex}:a]adelay=${delayComment}|${delayComment}[ca${index}];`
+      );
+
+      inputIndex++;
+
+      startTime = endTime;
+    });
+
+    const audioTracks = images.reduce((acc, _, index) => {
+      return acc + `[pa${index}][ca${index}]`;
+    }, "");
+    filterComplex.push(
+      `${audioTracks}concat=n=${images.length * 2}:v=0:a=1[outa];`
+    );
+
+    const dynamicMapOptions = ["-map [fv]"];
+
+    if (backgroundAudioPath) {
+      filterComplex.push(
+        `[outa][audioBg]amix=inputs=2:duration=first:dropout_transition=3[audioMix]`
+      );
+      dynamicMapOptions.push("-map [audioMix]");
+    } else {
+      dynamicMapOptions.push("-map [outa]");
     }
 
-    // Add subtitles if provided
-    if (subtitlesPath) {
-      command.input(subtitlesPath);
-      command.outputOptions(["-c:s mov_text"]);
-    }
-
-    // Add the filter complex to the command
-    let complexFilterString = filterComplex.join("");
-    if (complexFilterString.slice(-1) === ";") {
-      complexFilterString = complexFilterString.slice(0, -1);
-    }
-    console.log("Complex Filter: ", complexFilterString);
+    // Concatenate all filter complex strings and add to command
+    const complexFilterString = filterComplex.join("");
     command.complexFilter(complexFilterString);
 
-    const mapOptions = ["-map [fv]"];
-
-    if (!musicPath) {
-      mapOptions.push("-map 1:a");
-    } else {
-      mapOptions.push("-map [audioMix]");
-    }
-
-    // If subtitles are provided, add them to the map options
-    if (subtitlesPath) {
-      const subtitleIndex = musicPath ? 3 : 2;
-      mapOptions.push(`-map ${subtitleIndex}`);
-    }
-
-    // Final output options, including dynamic map options
+    // Set output options
     command
       .output(outputPath)
       .outputOptions([
-        ...mapOptions,
-        "-c:v libx264",
+        ...dynamicMapOptions,
         "-profile:v baseline",
         "-level 3.0",
         "-pix_fmt yuv420p",
-        // "-s 1080x1920", // Force Vertical Resolution (Aspect Ratio 9:16)
-        "-c:a aac",
-        // "-shortest",
+        "-s 1080x1920", // Force Vertical Resolution (Aspect Ratio 9:16)
         "-v verbose",
       ])
       .on("start", (commandLine) => {
         console.log("Spawned FFmpeg with command: " + commandLine);
       })
-      .on("end", function () {
+      .on("end", () => {
         console.log("Processing finished successfully");
         resolve();
       })
-      .on("error", function (err) {
+      .on("error", (err, stdout, stderr) => {
         console.log("Error:", err);
+        console.log("ffmpeg stdout:", stdout);
+        console.log("ffmpeg stderr:", stderr);
         reject(err);
-      })
-      .run();
+      });
+
+    // Run the FFmpeg command
+    command.run();
   });
 };
 
