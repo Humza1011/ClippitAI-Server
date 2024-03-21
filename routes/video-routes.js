@@ -10,7 +10,10 @@ const router = express.Router();
 router.get("/", videoController.GetVideos);
 
 // GET VIDEO BY ID
-router.get("/single/:id", videoController.GetVideoByID);
+router.get("/user/:id", videoController.GetUserVideos);
+
+// GET VIDEO BY ID
+router.get("/:id", videoController.GetVideoByID);
 
 // CREATE NEW VIDEOS
 router.post("/", UploadMultipleFilesMulter, videoController.CreateVideos);

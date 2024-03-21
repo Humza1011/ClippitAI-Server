@@ -3,7 +3,7 @@ const axios = require("axios");
 const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const cloudinary = require("cloudinary").v2;
-// const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require("uuid");
 
 //        ********** FUNCTIONS ***********
 
@@ -11,8 +11,24 @@ const cloudinary = require("cloudinary").v2;
 const GetVideos = async (req, res, next) => {
   console.log("Get all videos");
   try {
-    const video = await Video.find();
-    return res.status(200).send(video);
+    const query = {};
+    if (req.query.type) {
+      query.type = req.query.type;
+    }
+
+    const videos = await Video.find(query);
+    return res.status(200).send(videos);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET ALL VIDEOS FOR A SINGLE USER
+const GetUserVideos = async (req, res, next) => {
+  console.log("Get all user videos");
+  try {
+    const videos = await Video.find({ userId: req.params.id, type: "project" });
+    return res.status(200).send(videos);
   } catch (err) {
     next(err);
   }
@@ -75,6 +91,8 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
   const { images, voiceSettings, backgroundAudio, backgroundVideo, userId } =
     req.body;
 
+  console.log(req.body);
+
   try {
     const backgroundVideoPath = "./assets/Temp/backgroundVideo.mp4";
     await downloadFile(
@@ -117,12 +135,25 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
       type: "upload",
     });
 
-    // const video = new Video({
-    //   url: result.secure_url,
-    //   title: `Video ${uuidv4()}`,
-    //   type: "project",
-    //   userId: userId,
-    // });
+    const video = new Video({
+      url: result.secure_url,
+      title: `Video ${uuidv4()}`,
+      type: "project",
+      userId: userId,
+    });
+    await video.save();
+
+    // Delete the temporary files after upload
+    fs.unlinkSync(outputPath);
+    fs.unlinkSync(backgroundVideoPath);
+    for (let i = 0; i < images.length; i++) {
+      const promptAudioPath = `./assets/Temp/prompt_narration_${i}.mp3`;
+      const commentAudioPath = `./assets/Temp/comment_narration_${i}.mp3`;
+      const imagePath = `./assets/Temp/image_${i}.png`;
+      fs.unlinkSync(promptAudioPath);
+      fs.unlinkSync(commentAudioPath);
+      fs.unlinkSync(imagePath);
+    }
 
     // Respond with the URL of the uploaded file
     return res.status(200).json({
@@ -138,7 +169,7 @@ const GenerateGPTStoryVideo = async (req, res, next) => {
 };
 
 const GenerateWYRVideo = async (req, res, next) => {
-  const { voiceSettings, questions } = req.body;
+  const { voiceSettings, questions, backgroundAudio, userId } = req.body;
 
   try {
     const backgroundImagePath = "./assets/WYR.png";
@@ -166,22 +197,30 @@ const GenerateWYRVideo = async (req, res, next) => {
       audioDurations.push(audioDuration);
     }
 
-    await createWouldYouRatherVideo(
+    await createWouldYouRatherVideo({
       questions,
       backgroundImagePath,
       audioDurations,
       soundEffect,
-      outputPath
-    );
+      backgroundAudio: backgroundAudio ? backgroundAudio.url : "",
+      outputPath,
+    });
 
     const result = await cloudinary.uploader.upload(outputPath, {
       resource_type: "video",
       type: "upload",
     });
 
-    // Delete the temporary file after upload
-    fs.unlinkSync(outputPath);
+    const video = new Video({
+      url: result.secure_url,
+      title: `Video ${uuidv4()}`,
+      type: "project",
+      userId: userId,
+    });
+    await video.save();
 
+    // Delete the temporary files after upload
+    fs.unlinkSync(outputPath);
     for (let i = 0; i < questions.length; i++) {
       const audioPath = `./assets/Temp/narration_${i}.mp3`;
       const imagePath1 = `./assets/Temp/question_${i}_part_0.png`;
@@ -374,13 +413,14 @@ const compileGPTStoryVideo = async ({
   });
 };
 
-const createWouldYouRatherVideo = async (
+const createWouldYouRatherVideo = async ({
   questions,
   backgroundImagePath,
   audioDurations,
   soundEffect,
-  outputPath
-) => {
+  backgroundAudio,
+  outputPath,
+}) => {
   return new Promise(async (resolve, reject) => {
     let command = ffmpeg();
     const afterQuestionPause = 1;
@@ -399,8 +439,16 @@ const createWouldYouRatherVideo = async (
     // Filter for background image
     let filterComplex = ["[0:v]scale=1080:1920,setsar=1[fv];"];
 
+    console.log(backgroundAudio);
+    if (backgroundAudio) {
+      command
+        .input(backgroundAudio)
+        .inputOptions([`-t ${totalDuration}`, "-stream_loop -1"]);
+      filterComplex.push(`[1:a]volume=0.1[audioBg];`);
+    }
+
     // Add question images and overlay them on the background
-    let inputIndex = 1;
+    let inputIndex = backgroundAudio ? 2 : 1;
     let startTime = 0;
     questions.forEach((question, index) => {
       const duration = audioDurations[index] + soundEffect.duration;
@@ -482,8 +530,19 @@ const createWouldYouRatherVideo = async (
         const baseIndex = Math.floor(i / 2); // Calculate base question index
         const suffix = i % 2 === 0 ? "d" : "se"; // Determine the suffix based on whether it's a narration or sound effect
         return `[aud${baseIndex}${suffix}]`;
-      }).join("")}concat=n=${questions.length * 2}:v=0:a=1[outa]`
+      }).join("")}concat=n=${questions.length * 2}:v=0:a=1[outa];`
     );
+
+    const dynamicMapOptions = ["-map [fv]"];
+
+    if (backgroundAudio) {
+      filterComplex.push(
+        `[outa][audioBg]amix=inputs=2:duration=first:dropout_transition=3[audioMix]`
+      );
+      dynamicMapOptions.push("-map [audioMix]");
+    } else {
+      dynamicMapOptions.push("-map [outa]");
+    }
 
     // Concatenate all filter complex strings and add to command
     const complexFilterString = filterComplex.join("");
@@ -493,8 +552,7 @@ const createWouldYouRatherVideo = async (
     command
       .output(outputPath)
       .outputOptions([
-        "-map [fv]",
-        "-map [outa]",
+        ...dynamicMapOptions,
         "-profile:v baseline",
         "-level 3.0",
         "-pix_fmt yuv420p",
@@ -646,6 +704,7 @@ const splitTextIntoLines = (text, maxLineLength) => {
 
 module.exports = {
   GetVideos,
+  GetUserVideos,
   GetVideoByID,
   CreateVideos,
   UpdateVideo,

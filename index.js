@@ -14,6 +14,7 @@ const audioRoutes = require("./routes/audio-routes");
 const imageRoutes = require("./routes/image-routes");
 const projectRoutes = require("./routes/project-routes");
 const videoRoutes = require("./routes/video-routes");
+const adminRoutes = require("./routes/admin-routes");
 const {
   generateVideoScript,
   generateWYRQuestions,
@@ -59,6 +60,7 @@ app.use("/audio", audioRoutes);
 app.use("/image", imageRoutes);
 app.use("/project", projectRoutes);
 app.use("/video", videoRoutes);
+app.use("/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({ message: "Success" });
