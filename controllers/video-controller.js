@@ -315,10 +315,10 @@ const compileGPTStoryVideo = async ({
       );
       inputIndex++;
 
-      const yPosPromptHeadingText = "H/4 - 30";
-      const yPosPromptText = "H/4 + 20";
+      const yPosPromptHeadingText = "H/4-30";
+      const yPosPromptText = "H/4+20";
       const yPosCommentText =
-        image.comment.length <= 48 ? "H/2 - 30" : "H/2 - 80";
+        image.comment.length <= 48 ? "H/2-30" : "H/2-80";
 
       const formattedPromptText = splitTextIntoLines(image.prompt, 42);
       const formattedCommentText = splitTextIntoLines(image.comment, 48);
